@@ -56,7 +56,7 @@ def get_all_status_from_drivertech(**kwargs):
 
 default_args = {
     'owner': 'Vincent',
-    'start_date': date.today(),
+    'start_date': datetime.now(),
 
 }
 # 'retry_delay': timedelta(minutes=5)
