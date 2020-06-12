@@ -12,7 +12,7 @@ from requests import Session
 from requests.auth import HTTPBasicAuth
 from fastapi.encoders import jsonable_encoder
 
-from zeep import CachingClient
+from zeep import Client
 from zeep.transports import Transport
 from zeep.helpers import serialize_object
 
@@ -42,13 +42,13 @@ def get_all_status_from_drivertech(**kwargs):
         # SOAP client setup
         session = Session()
         session.auth = HTTPBasicAuth(USERNAME, PASSWORD)
-        client = CachingClient(URL, transport=Transport(session=session))
+        client = Client(URL, transport=Transport(session=session))
         interval_start = (datetime.now() - timedelta(minutes=10)).timestamp()
         res = client.service.VehicleStatus_GetAll(datetime.utcfromtimestamp(interval_start))
         json_obj = jsonable_encoder(serialize_object(res))
         hook = airflow.hooks.S3_hook.S3Hook(AWS_CONNECTION)
         hook.load_string(json.dumps(json_obj), os.path.join(GETTING, f'{interval_start}__{GETTING}.json'),
-                         'drivertech-test')
+                         'drivertech')
     except Exception as e:
         LOGGER.error(e)
         raise e
