@@ -130,4 +130,4 @@ with DAG('drivertech_api', default_args=default_args, schedule_interval=timedelt
     )
 
     # Use arrows to set dependencies between tasks
-    hain(start_task, [get_all_driver_status, get_all_HOS_unassigned, get_all_jbus_faults])
+    chain(start_task, [get_all_driver_status, get_all_HOS_unassigned, get_all_jbus_faults])
