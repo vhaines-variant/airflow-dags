@@ -53,63 +53,63 @@ def get_all_status_from_drivertech(**kwargs):
         LOGGER.error(e)
         raise e
 
-    def get_all_HOS_unassigned_from_drivertech(**kwargs):
+def get_all_HOS_unassigned_from_drivertech(**kwargs):
 
-        GETTING = "HOS_unassigned"
+    GETTING = "HOS_unassigned"
 
-        AWS_CONNECTION = 'drivertech_S3_conn'
+    AWS_CONNECTION = 'drivertech_S3_conn'
 
-        # SOAP config
-        URL = get_drivertech_secret('dt_url')
-        USERNAME = get_drivertech_secret('dt_username')
-        PASSWORD = get_drivertech_secret('dt_password')
+    # SOAP config
+    URL = get_drivertech_secret('dt_url')
+    USERNAME = get_drivertech_secret('dt_username')
+    PASSWORD = get_drivertech_secret('dt_password')
 
-        LOGGER = logging.getLogger(f"airflow.get_{GETTING}")
-        try:
-            # SOAP client setup
-            session = Session()
-            session.auth = HTTPBasicAuth(USERNAME, PASSWORD)
-            client = Client(URL, transport=Transport(session=session))
-            interval_start = (datetime.now() - timedelta(minutes=10)).timestamp()
-            res = client.service.HOSUnassignedDriving_GetByUpdateDateGreaterThan(
-                datetime.utcfromtimestamp(interval_start),
-                500)
-            json_obj = jsonable_encoder(serialize_object(res))
-            hook = airflow.hooks.S3_hook.S3Hook(AWS_CONNECTION)
-            hook.load_string(json.dumps(json_obj), os.path.join(GETTING, f'{interval_start}__{GETTING}.json'),
-                             'drivertech')
-        except Exception as e:
-            LOGGER.error(e)
-            raise e
+    LOGGER = logging.getLogger(f"airflow.get_{GETTING}")
+    try:
+        # SOAP client setup
+        session = Session()
+        session.auth = HTTPBasicAuth(USERNAME, PASSWORD)
+        client = Client(URL, transport=Transport(session=session))
+        interval_start = (datetime.now() - timedelta(minutes=10)).timestamp()
+        res = client.service.HOSUnassignedDriving_GetByUpdateDateGreaterThan(
+            datetime.utcfromtimestamp(interval_start),
+            500)
+        json_obj = jsonable_encoder(serialize_object(res))
+        hook = airflow.hooks.S3_hook.S3Hook(AWS_CONNECTION)
+        hook.load_string(json.dumps(json_obj), os.path.join(GETTING, f'{interval_start}__{GETTING}.json'),
+                         'drivertech')
+    except Exception as e:
+        LOGGER.error(e)
+        raise e
 
-    def get_all_jbus_faults_from_drivertech(**kwargs):
-        GETTING = "jbus_faults"
+def get_all_jbus_faults_from_drivertech(**kwargs):
+    GETTING = "jbus_faults"
 
-        AWS_CONNECTION = 'drivertech_S3_conn'
+    AWS_CONNECTION = 'drivertech_S3_conn'
 
-        # SOAP config
-        URL = get_drivertech_secret('dt_url')
-        USERNAME = get_drivertech_secret('dt_username')
-        PASSWORD = get_drivertech_secret('dt_password')
+    # SOAP config
+    URL = get_drivertech_secret('dt_url')
+    USERNAME = get_drivertech_secret('dt_username')
+    PASSWORD = get_drivertech_secret('dt_password')
 
-        LOGGER = logging.getLogger(f"airflow.get_{GETTING}")
-        try:
-            # SOAP client setup
-            session = Session()
-            session.auth = HTTPBasicAuth(USERNAME, PASSWORD)
-            client = Client(URL, transport=Transport(session=session))
-            interval_start = (datetime.now() - timedelta(minutes=10)).timestamp()
+    LOGGER = logging.getLogger(f"airflow.get_{GETTING}")
+    try:
+        # SOAP client setup
+        session = Session()
+        session.auth = HTTPBasicAuth(USERNAME, PASSWORD)
+        client = Client(URL, transport=Transport(session=session))
+        interval_start = (datetime.now() - timedelta(minutes=10)).timestamp()
 
-            res = client.service.JbusFaults_GetByReceivedOnDateGreaterThan(
-                datetime.utcfromtimestamp(interval_start),
-                500)
-            json_obj = jsonable_encoder(serialize_object(res))
-            hook = airflow.hooks.S3_hook.S3Hook(AWS_CONNECTION)
-            hook.load_string(json.dumps(json_obj), os.path.join(GETTING, f'{interval_start}__{GETTING}.json'),
-                             'drivertech')
-        except Exception as e:
-            LOGGER.error(e)
-            raise e
+        res = client.service.JbusFaults_GetByReceivedOnDateGreaterThan(
+            datetime.utcfromtimestamp(interval_start),
+            500)
+        json_obj = jsonable_encoder(serialize_object(res))
+        hook = airflow.hooks.S3_hook.S3Hook(AWS_CONNECTION)
+        hook.load_string(json.dumps(json_obj), os.path.join(GETTING, f'{interval_start}__{GETTING}.json'),
+                         'drivertech')
+    except Exception as e:
+        LOGGER.error(e)
+        raise e
 
 
 default_args = {
@@ -129,5 +129,14 @@ with DAG('drivertech_api', default_args=default_args, schedule_interval=timedelt
         python_callable=get_all_status_from_drivertech
     )
 
+    get_all_HOS_unassigned = PythonOperator(
+        task_id='get_all_HOS_unassigned',
+        python_callable=get_all_HOS_unassigned_from_drivertech
+    )
+
+    get_all_jbus_faults = PythonOperator(
+        task_id='get_all_jbus_faults',
+        python_callable=get_all_jbus_faults_from_drivertech
+    )
     # Use arrows to set dependencies between tasks
     chain(start_task, [get_all_driver_status, get_all_HOS_unassigned, get_all_jbus_faults])
